@@ -29,45 +29,21 @@ function createPlaylistData(playlist) {
   let returnStr = "#EXTM3U\n";
 
   for (let i = 0; i < items.length; i++) {
-    let element = items[i];
-    if (element) {
-      let trackObj = getTrackData(element["Track ID"]);
+    let item = items[i];
+    if (item) {
+      let trackObj = getTrackData(item["Track ID"]);
       if (trackObj) {
-        returnStr +=
-          "#EXTIF:" +
-          trackObj["Total Time"] +
-          ", " +
-          trackObj["Artist"] +
-          " - " +
-          trackObj["Name"] +
-          "\n";
-
+        let totalTime = trackObj["Total Time"];
+        let artist = trackObj["Artist"];
+        let trackName = trackObj["Name"];
         let pathToFile = cleanPathToFile(trackObj["Location"]);
-        returnStr += pathToFile + "\n";
+
+        if (pathToFile) {
+          returnStr +=
+            "#EXTIF:" + totalTime + ", " + artist + " - " + trackName + "\n";
+          returnStr += pathToFile + "\n";
+        }
       }
-    } else {
-      console.log("no element found");
-    }
-  }  
-  return returnStr;
-}
-
-function createPlaylistSongData(item, returnStr) {
-  if (item) {
-    let trackObj = getTrackData(item["Track ID"]);
-    if (trackObj) {
-      returnStr +=
-        "#EXTIF:" +
-        trackObj["Total Time"] +
-        ", " +
-        trackObj["Artist"] +
-        " - " +
-        trackObj["Name"] +
-        "\n";
-
-      let pathToFile = cleanPathToFile(trackObj["Location"]);
-      console.log(pathToFile);
-      returnStr += pathToFile + "\n";
     }
   }
   return returnStr;
@@ -81,7 +57,7 @@ function loadPlaylists() {
       library = libraryJsonObj;
       //writeLibraryToJson(library)
       iTunesLibrary
-        .getPlaylists("./data/iTunesLibrary_less_artists.xml")
+        .getPlaylists("./data/iTunesLibrary.xml")
         .then((itunesPlaylists) => {
           console.log("There are " + itunesPlaylists.length + " playlists");
           playlists = itunesPlaylists;
@@ -115,8 +91,14 @@ function writePlaylistsToFile(playlists) {
 function writePlaylist(playlist) {
   let playlistData = createPlaylistData(playlist);
   let playlistName = String(playlist.Name);
+  let playlistID = String(playlist["Playlist ID"]);
+
   playlistName = playlistName.replace(/:/g, " - ");
-  writeDataToFile(playlistData, "playlists", playlistName, ".m3u");
+  if (playlistData !== "#EXTM3U\n") {
+    writeDataToFile(playlistData, "playlists", playlistName, ".m3u");
+  } else {
+    console.log("no items in playlist");
+  }
 }
 
 function writeLibraryToJson(library) {
