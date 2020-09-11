@@ -5,7 +5,7 @@ const { resolve } = require("path");
 exports.getPlaylists = (fileToLoad) => {
   console.log("ITL.readFile " + fileToLoad);
 
-  return new Promise((resolve, request) => {
+  return new Promise((resolve, reject) => {
 
     let playlists = [];
 

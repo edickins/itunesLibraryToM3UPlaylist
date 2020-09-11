@@ -38,7 +38,7 @@ function createPlaylistData(playlist) {
         let trackName = trackObj["Name"];
         let pathToFile = cleanPathToFile(trackObj["Location"]);
 
-        if (pathToFile) {
+        if (pathToFile  && pathToFile.indexOf('.m4p') == -1) {
           returnStr +=
             "#EXTIF:" + totalTime + ", " + artist + " - " + trackName + "\n";
           returnStr += pathToFile + "\n";
