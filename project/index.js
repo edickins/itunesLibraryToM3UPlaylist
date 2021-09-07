@@ -38,7 +38,7 @@ function createPlaylistData(playlist) {
         let trackName = trackObj["Name"];
         let pathToFile = cleanPathToFile(trackObj["Location"]);
 
-        if (pathToFile  && pathToFile.indexOf('.m4p') == -1) {
+        if (pathToFile && pathToFile.indexOf(".m4p") == -1) {
           returnStr +=
             "#EXTIF:" + totalTime + ", " + artist + " - " + trackName + "\n";
           returnStr += pathToFile + "\n";
@@ -47,6 +47,17 @@ function createPlaylistData(playlist) {
     }
   }
   return returnStr;
+}
+
+async function getLibraryAsJson() {
+  const library = await iTunesLibrary.getLibraryAsJson(
+    "./data/iTunesLibrary.xml"
+  );
+  return library;
+}
+async function getPlaylists(path) {
+  const playlists = await iTunesLibrary.getPlaylists(path);
+  return playlists;
 }
 
 function loadPlaylists() {
@@ -106,4 +117,13 @@ function writeLibraryToJson(library) {
   writeDataToFile(libraryDataAsJson, "library", "libraryAsJson", ".json");
 }
 
-loadPlaylists();
+//loadPlaylists();
+
+async function run() {
+  const playlists = await iTunesLibrary.getPlaylists(
+    "./data/iTunesLibrary.xml"
+  );
+  console.log("There are " + playlists.length + " playlists");
+}
+
+run();
