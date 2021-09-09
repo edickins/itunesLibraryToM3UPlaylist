@@ -1,129 +1,47 @@
 const iTunesLibrary = require("./itunesPlaylistGenerator.js");
 const fs = require("fs");
 const path = require("path");
-const { resolve } = require("path");
 
 let playlists = [];
 let library = {};
 
-function getTrackData(trackID) {
-  let trackObj = library.Tracks[trackID];
-  if (trackObj) {
-    return trackObj;
-  }
-}
-
-function cleanPathToFile(pathToFile) {
-  pathToFile = pathToFile || "";
-  pathToFile = String(pathToFile);
-  var n = pathToFile.lastIndexOf("/");
-  if (n > -1) {
-    pathToFile = pathToFile.substring(n + 1);
-    pathToFile = pathToFile.replace(/%20/g, " ");
-  }
-  return pathToFile;
-}
-
-function createPlaylistData(playlist) {
-  let items = playlist["Playlist Items"] || [];
-  let returnStr = "#EXTM3U\n";
-
-  for (let i = 0; i < items.length; i++) {
-    let item = items[i];
-    if (item) {
-      let trackObj = getTrackData(item["Track ID"]);
-      if (trackObj) {
-        let totalTime = trackObj["Total Time"];
-        let artist = trackObj["Artist"];
-        let trackName = trackObj["Name"];
-        let pathToFile = cleanPathToFile(trackObj["Location"]);
-
-        if (pathToFile && pathToFile.indexOf(".m4p") == -1) {
-          returnStr +=
-            "#EXTIF:" + totalTime + ", " + artist + " - " + trackName + "\n";
-          returnStr += pathToFile + "\n";
-        }
-      }
-    }
-  }
-  return returnStr;
-}
-
-async function getLibraryAsJson() {
-  const library = await iTunesLibrary.getLibraryAsJson(
-    "./data/iTunesLibrary.xml"
-  );
+async function getLibraryAsJson(path) {
+  const library = await iTunesLibrary.getLibraryAsJson(path);
   return library;
 }
-async function getPlaylists(path) {
-  const playlists = await iTunesLibrary.getPlaylists(path);
-  return playlists;
+
+async function getPlaylists(library) {
+  return library.Playlists;
 }
 
-function loadPlaylists() {
-  // Start calling async loading methods returning Promises
-  iTunesLibrary
-    .getLibraryAsJson("./data/iTunesLibrary.xml")
-    .then((libraryJsonObj) => {
-      library = libraryJsonObj;
-      //writeLibraryToJson(library)
-      iTunesLibrary
-        .getPlaylists("./data/iTunesLibrary.xml")
-        .then((itunesPlaylists) => {
-          console.log("There are " + itunesPlaylists.length + " playlists");
-          playlists = itunesPlaylists;
-          writePlaylistsToFile(playlists);
-        });
-    });
-}
+function getPlaylistData(playlistObj, tracks) {
+  const items = playlistObj["Playlist Items"] || [];
 
-function writeDataToFile(fileData, folderName, fileName, fileExtension) {
-  if (folderName.indexOf("/") == -1) {
-    folderName = folderName + "/";
-  }
-  fs.writeFile(
-    path.resolve(__dirname, "./data/" + folderName + fileName + fileExtension),
-    fileData,
-    (err) => {
-      if (err) {
-        throw err;
-      }
-      console.log("Playlist File written");
-    }
-  );
-}
-
-function writePlaylistsToFile(playlists) {
-  playlists.forEach((playlist) => {
-    writePlaylist(playlist);
+  return items.map((value) => {
+    return getTrackData(value, tracks);
   });
 }
 
-function writePlaylist(playlist) {
-  let playlistData = createPlaylistData(playlist);
-  let playlistName = String(playlist.Name);
-  let playlistID = String(playlist["Playlist ID"]);
-
-  playlistName = playlistName.replace(/:/g, " - ");
-  if (playlistData !== "#EXTM3U\n") {
-    writeDataToFile(playlistData, "playlists", playlistName, ".m3u");
-  } else {
-    console.log("no items in playlist");
-  }
+function getTrackData(trackObj, tracks) {
+  const track = tracks[trackObj["Track ID"]];
+  /* for (key in track) {
+    if (key.indexOf(" ") > -1) {
+      console.log(`key ${key} contains a space`);
+    }
+  } */
+  //console.log(`${track["Name"]} by ${track["Artist"]}`);
+  return track;
 }
-
-function writeLibraryToJson(library) {
-  let libraryDataAsJson = JSON.stringify(library);
-  writeDataToFile(libraryDataAsJson, "library", "libraryAsJson", ".json");
-}
-
-//loadPlaylists();
 
 async function run() {
-  const playlists = await iTunesLibrary.getPlaylists(
-    "./data/iTunesLibrary.xml"
-  );
-  console.log("There are " + playlists.length + " playlists");
+  const libraryObj = await getLibraryAsJson("./data/iTunesLibrary.xml");
+  const playlists = await getPlaylists(libraryObj);
+
+  playlists.forEach((playlistObj) => {
+    const tracks = getPlaylistData(playlistObj, libraryObj.Tracks);
+    console.log(playlistObj);
+  });
+  console.log(`there are ${playlists.length} playlists`);
 }
 
 run();
