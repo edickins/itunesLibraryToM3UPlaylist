@@ -47,12 +47,15 @@ exports.getPlaylistData = (playlistObj, allTracks) => {
 };
 
 const getTrackData = (trackObj, allTracks) => {
-  let track = allTracks[trackObj["Track ID"]];
-
-  if (track) {
-    track = cleanTrackData(track);
+  try {
+    let track = allTracks[trackObj["Track ID"]];
+    if (!track) throw "no track found in tracklist";
+    return cleanTrackData(track);
+  } catch (err) {
+    console.warn(err);
   }
-  return track;
+
+  return {};
 };
 
 const cleanTrackData = (track) => {
@@ -60,7 +63,9 @@ const cleanTrackData = (track) => {
   for (let key in track) {
     let cleanedKey = camelCaseKey(key);
     if (cleanedKey in TRACK_PROPS) {
-      cleanedTrack[cleanedKey] = track[key];
+      if (track[key]) {
+        cleanedTrack[cleanedKey] = track[key];
+      }
     }
   }
 
@@ -71,7 +76,7 @@ exports.createCollectionDoc = (playlistObj, playlistItems) => {
   const docObj = {
     dateCreated: new Date(),
     lastUpdated: new Date(),
-    name: playlistObj.name,
+    playlistName: playlistObj.name,
     playlistItems: playlistItems,
   };
 
