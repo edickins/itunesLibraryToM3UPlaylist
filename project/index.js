@@ -2,8 +2,18 @@ const iTunesLibrary = require("./itunesPlaylistGenerator.js");
 const fs = require("fs");
 const path = require("path");
 
-let playlists = [];
-let library = {};
+const trackProps = {
+  albumArtist: true,
+  album: true,
+  artist: true,
+  genre: true,
+  name: true,
+  sortAlbum: true,
+  sortArtist: true,
+  sortName: true,
+  trackID: true,
+  year: true,
+};
 
 async function getLibraryAsJson(path) {
   const library = await iTunesLibrary.getLibraryAsJson(path);
@@ -24,18 +34,52 @@ function getPlaylistData(playlistObj, allTracks) {
 }
 
 function getTrackData(trackObj, allTracks) {
-  const track = allTracks[trackObj["Track ID"]];
-  //todo: format track data appropriately
-  /* for (key in track) {
-    if (key.indexOf(" ") > -1) {
-      console.log(`key ${key} contains a space`);
-    }
-  } */
+  let track = allTracks[trackObj["Track ID"]];
 
   if (track) {
     console.log(`${track["Name"]} by ${track["Artist"]}`);
-    return track;
+    track = cleanTrackData(track);
+    console.log(track);
   }
+  return track;
+}
+
+function cleanTrackData(track) {
+  const cleanedTrack = {};
+  for (let key in track) {
+    let cleanedKey = cleanKey(key);
+    if (cleanedKey in trackProps) {
+      cleanedTrack[cleanedKey] = track[key];
+    }
+  }
+
+  return cleanedTrack;
+}
+
+function cleanKey(key) {
+  // todo look at how this function really works - replace, regex etc
+  return key
+    .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
+      return index == 0 ? word.toLowerCase() : word.toUpperCase();
+    })
+    .replace(/\s+/g, "");
+}
+
+function writePlaylistsToMongoDB(playlists) {
+  const url = "mongodb://localhost:27017/iTunes";
+  mongodb.connect(url, function (err, db) {
+    const dbPlaylists = db.collection("playlists");
+    const playlistsAll = [];
+
+    dbPlaylists.find({}).toArray(function (err, results) {
+      if (err) {
+        console.log(err);
+      } else {
+        playlistsAll = results;
+        log(`all playlists : ${playlistsAll}`);
+      }
+    });
+  });
 }
 
 async function run() {
@@ -44,9 +88,16 @@ async function run() {
 
   playlists.forEach((playlistObj) => {
     // todo: use playlistTracks
-    const playlistTracks = getPlaylistData(playlistObj, libraryObj.Tracks);
-    console.log(playlistObj);
+
+    // console.log(`getting playlistdata for ${playlistObj.Name}`);
+
+    if (playlistObj.Name == "Popol Vuh Essentials") {
+      console.log(`getting playlistdata for ${playlistObj.Name}`);
+      const playlistTracks = getPlaylistData(playlistObj, libraryObj.Tracks);
+      console.log(playlistTracks);
+    }
   });
+
   console.log(`there are ${playlists.length} playlists`);
 }
 
