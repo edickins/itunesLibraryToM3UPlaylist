@@ -75,7 +75,6 @@ async function run() {
     const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
     playlistsForDatabase.push(createCollectionDoc(playlistObj, playlistTracks));
     // todo: use playlistTracks
-    // console.log(`getting playlistdata for ${playlistObj.name}`);
     /* if (playlistObj.name == "Popol Vuh Essentials") {
       console.log(`getting playlistdata for ${playlistObj.name}`);
       const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
@@ -83,7 +82,7 @@ async function run() {
     } */
   });
 
-  console.log(`there are ${playlists.length} playlists`);
+  console.log(playlistsForDatabase);
   console.log(`there are ${playlistsForDatabase.length} playlists`);
 }
 
