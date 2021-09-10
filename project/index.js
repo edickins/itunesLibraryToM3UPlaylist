@@ -1,12 +1,12 @@
+const fs = require("fs");
+const path = require("path");
 const iTunesLibrary = require("./modules/loaders/itunesPlaylistGenerator.js");
 const {
   playlistIsBlocked,
-  cleanLibraryObjKeys,
+  cleanObjKeys,
   getPlaylistData,
-  createDatabasePlaylistObj,
+  createCollectionDoc,
 } = require("./modules/utils/utils");
-const fs = require("fs");
-const path = require("path");
 
 const BLOCKED_PLAYLISTS = [
   "Library",
@@ -25,6 +25,7 @@ const BLOCKED_PLAYLISTS = [
 ];
 
 async function getLibraryAsJson() {
+  // path relative to location of getLibraryAsJson function deinition.
   const path = "../../data/iTunesLibrary.xml";
   const library = await iTunesLibrary.getLibraryAsJson(path);
   return library;
@@ -33,7 +34,7 @@ async function getLibraryAsJson() {
 function getPlaylistsFromLibrary(library) {
   const playlists = removeBlockedPlaylists(library.playlists);
   return playlists.map((playlist) => {
-    return cleanLibraryObjKeys(playlist);
+    return cleanObjKeys(playlist);
   });
 }
 
@@ -66,15 +67,13 @@ function writePlaylistsToMongoDB(playlists) {
 
 async function run() {
   let libraryObj = await getLibraryAsJson();
-  libraryObj = cleanLibraryObjKeys(libraryObj);
+  libraryObj = cleanObjKeys(libraryObj);
   const playlists = getPlaylistsFromLibrary(libraryObj);
   const playlistsForDatabase = [];
 
   playlists.forEach((playlistObj) => {
     const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
-    playlistsForDatabase.push(
-      createDatabasePlaylistObj(playlistObj, playlistTracks)
-    );
+    playlistsForDatabase.push(createCollectionDoc(playlistObj, playlistTracks));
     // todo: use playlistTracks
     // console.log(`getting playlistdata for ${playlistObj.name}`);
     /* if (playlistObj.name == "Popol Vuh Essentials") {

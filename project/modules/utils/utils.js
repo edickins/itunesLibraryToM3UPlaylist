@@ -28,7 +28,7 @@ const camelCaseKey = (key) => {
     .replace(/\s+/g, "");
 };
 
-exports.cleanLibraryObjKeys = (obj) => {
+exports.cleanObjKeys = (obj) => {
   const cleanedObj = {};
   for (let key in obj) {
     let cleanedKey = camelCaseKey(key);
@@ -67,7 +67,7 @@ const cleanTrackData = (track) => {
   return cleanedTrack;
 };
 
-exports.createDatabasePlaylistObj = (playlistObj, playlistItems) => {
+exports.createCollectionDoc = (playlistObj, playlistItems) => {
   const docObj = {
     dateCreated: new Date(),
     lastUpdated: new Date(),
