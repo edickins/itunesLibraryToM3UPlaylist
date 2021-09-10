@@ -84,8 +84,7 @@ async function run() {
 
   playlistsForDatabase.forEach((playlist) => {
     playlist.playlistItems.forEach((track) => {
-      const details = track.name ? track.name : undefined;
-      //console.log(details);
+      console.log(track.name);
     });
   });
 
