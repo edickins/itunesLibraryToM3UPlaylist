@@ -28,6 +28,7 @@ const camelCaseKey = (key) => {
     .replace(/\s+/g, "");
 };
 
+/* clean up keys in Object */
 exports.cleanObjKeys = (obj) => {
   const cleanedObj = {};
   for (let key in obj) {
@@ -38,6 +39,7 @@ exports.cleanObjKeys = (obj) => {
   return cleanedObj;
 };
 
+/* get data for each track in a playlist from master list of tracks*/
 exports.getPlaylistData = (playlistObj, allTracks) => {
   const items = playlistObj.playlistItems || [];
   // return Array of playlist track data
@@ -50,7 +52,7 @@ const getTrackData = (trackObj, allTracks) => {
   try {
     let track = allTracks[trackObj["Track ID"]];
     if (!track) throw "no track found in tracklist";
-    return cleanTrackData(track);
+    return cleanUpTrackDataProps(track);
   } catch (err) {
     console.warn(err);
   }
@@ -58,7 +60,7 @@ const getTrackData = (trackObj, allTracks) => {
   return {};
 };
 
-const cleanTrackData = (track) => {
+const cleanUpTrackDataProps = (track) => {
   const cleanedTrack = {};
   for (let key in track) {
     let cleanedKey = camelCaseKey(key);

@@ -82,6 +82,7 @@ async function run() {
     } */
   });
 
+  /* NOW WE HAVE THE PLAYLISTS FOR THE DATABASE TO USE, iterate through SOME PROPERTIES */
   playlistsForDatabase.forEach((playlist) => {
     playlist.playlistItems.forEach((track) => {
       console.log(track.name);
