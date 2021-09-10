@@ -21,11 +21,14 @@ async function getLibraryAsJson(path) {
 }
 
 function getPlaylists(library) {
-  return library.Playlists;
+  let playlists = library.playlists;
+  return playlists.map((playlist) => {
+    return cleanObjKeys(playlist);
+  });
 }
 
 function getPlaylistData(playlistObj, allTracks) {
-  const items = playlistObj["Playlist Items"] || [];
+  const items = playlistObj.playlistItems || [];
 
   // return Array of playlist track data
   return items.map((value) => {
@@ -37,11 +40,21 @@ function getTrackData(trackObj, allTracks) {
   let track = allTracks[trackObj["Track ID"]];
 
   if (track) {
-    console.log(`${track["Name"]} by ${track["Artist"]}`);
     track = cleanTrackData(track);
+    console.log(`${track.name} by ${track.artist}`);
     console.log(track);
   }
   return track;
+}
+
+function cleanObjKeys(obj) {
+  const cleanedObj = {};
+  for (let key in obj) {
+    let cleanedKey = cleanKey(key);
+    cleanedObj[cleanedKey] = obj[key];
+  }
+
+  return cleanedObj;
 }
 
 function cleanTrackData(track) {
@@ -83,17 +96,18 @@ function writePlaylistsToMongoDB(playlists) {
 }
 
 async function run() {
-  const libraryObj = await getLibraryAsJson("./data/iTunesLibrary.xml");
+  let libraryObj = await getLibraryAsJson("./data/iTunesLibrary.xml");
+  libraryObj = cleanObjKeys(libraryObj);
   const playlists = getPlaylists(libraryObj);
 
   playlists.forEach((playlistObj) => {
     // todo: use playlistTracks
 
-    // console.log(`getting playlistdata for ${playlistObj.Name}`);
+    // console.log(`getting playlistdata for ${playlistObj.name}`);
 
-    if (playlistObj.Name == "Popol Vuh Essentials") {
-      console.log(`getting playlistdata for ${playlistObj.Name}`);
-      const playlistTracks = getPlaylistData(playlistObj, libraryObj.Tracks);
+    if (playlistObj.name == "Popol Vuh Essentials") {
+      console.log(`getting playlistdata for ${playlistObj.name}`);
+      const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
       console.log(playlistTracks);
     }
   });
