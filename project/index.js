@@ -1,81 +1,50 @@
-const iTunesLibrary = require("./itunesPlaylistGenerator.js");
+const iTunesLibrary = require("./modules/loaders/itunesPlaylistGenerator.js");
+const {
+  playlistIsBlocked,
+  cleanLibraryObjKeys,
+  getPlaylistData,
+  createDatabasePlaylistObj,
+} = require("./modules/utils/utils");
 const fs = require("fs");
 const path = require("path");
 
-const trackProps = {
-  albumArtist: true,
-  album: true,
-  artist: true,
-  genre: true,
-  name: true,
-  sortAlbum: true,
-  sortArtist: true,
-  sortName: true,
-  trackID: true,
-  year: true,
-};
+const BLOCKED_PLAYLISTS = [
+  "Library",
+  "Downloaded",
+  "Music",
+  "0 plays Playlist",
+  "90’s Music",
+  "Classical Music",
+  "808 State DJs - Radio Show 1990",
+  "808 State DJs - Radio Show 1991",
+  "808 State DJs - Radio Show 1992",
+  "r&s",
+  "Music for Programming",
+  "Gescom - Radio Show",
+  "Garageband",
+];
 
-async function getLibraryAsJson(path) {
+async function getLibraryAsJson() {
+  const path = "../../data/iTunesLibrary.xml";
   const library = await iTunesLibrary.getLibraryAsJson(path);
   return library;
 }
 
-function getPlaylists(library) {
-  let playlists = library.playlists;
+function getPlaylistsFromLibrary(library) {
+  const playlists = removeBlockedPlaylists(library.playlists);
   return playlists.map((playlist) => {
-    return cleanObjKeys(playlist);
+    return cleanLibraryObjKeys(playlist);
   });
 }
 
-function getPlaylistData(playlistObj, allTracks) {
-  const items = playlistObj.playlistItems || [];
-
-  // return Array of playlist track data
-  return items.map((value) => {
-    return getTrackData(value, allTracks);
-  });
-}
-
-function getTrackData(trackObj, allTracks) {
-  let track = allTracks[trackObj["Track ID"]];
-
-  if (track) {
-    track = cleanTrackData(track);
-    console.log(`${track.name} by ${track.artist}`);
-    console.log(track);
-  }
-  return track;
-}
-
-function cleanObjKeys(obj) {
-  const cleanedObj = {};
-  for (let key in obj) {
-    let cleanedKey = cleanKey(key);
-    cleanedObj[cleanedKey] = obj[key];
-  }
-
-  return cleanedObj;
-}
-
-function cleanTrackData(track) {
-  const cleanedTrack = {};
-  for (let key in track) {
-    let cleanedKey = cleanKey(key);
-    if (cleanedKey in trackProps) {
-      cleanedTrack[cleanedKey] = track[key];
+function removeBlockedPlaylists(playlists) {
+  return playlists.reduce((previousValue, nextValue) => {
+    if (!playlistIsBlocked(nextValue, BLOCKED_PLAYLISTS)) {
+      console.log(`adding playist to docs Array : ${nextValue.Name}`);
+      previousValue.push(nextValue);
     }
-  }
-
-  return cleanedTrack;
-}
-
-function cleanKey(key) {
-  // todo look at how this function really works - replace, regex etc
-  return key
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
-      return index == 0 ? word.toLowerCase() : word.toUpperCase();
-    })
-    .replace(/\s+/g, "");
+    return previousValue;
+  }, []);
 }
 
 function writePlaylistsToMongoDB(playlists) {
@@ -96,23 +65,27 @@ function writePlaylistsToMongoDB(playlists) {
 }
 
 async function run() {
-  let libraryObj = await getLibraryAsJson("./data/iTunesLibrary.xml");
-  libraryObj = cleanObjKeys(libraryObj);
-  const playlists = getPlaylists(libraryObj);
+  let libraryObj = await getLibraryAsJson();
+  libraryObj = cleanLibraryObjKeys(libraryObj);
+  const playlists = getPlaylistsFromLibrary(libraryObj);
+  const playlistsForDatabase = [];
 
   playlists.forEach((playlistObj) => {
+    const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
+    playlistsForDatabase.push(
+      createDatabasePlaylistObj(playlistObj, playlistTracks)
+    );
     // todo: use playlistTracks
-
     // console.log(`getting playlistdata for ${playlistObj.name}`);
-
-    if (playlistObj.name == "Popol Vuh Essentials") {
+    /* if (playlistObj.name == "Popol Vuh Essentials") {
       console.log(`getting playlistdata for ${playlistObj.name}`);
       const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
       console.log(playlistTracks);
-    }
+    } */
   });
 
   console.log(`there are ${playlists.length} playlists`);
+  console.log(`there are ${playlistsForDatabase.length} playlists`);
 }
 
 run();
