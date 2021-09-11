@@ -53,21 +53,21 @@ function removeBlockedPlaylists(playlists) {
 /* replace all existing playlists in the playlists collection */
 async function writePlaylistsToMongoDB(playlists) {
   const url = "mongodb://localhost:27017";
-
   const client = new MongoClient(url);
 
   try {
+    // Connect the client to the server
     await client.connect();
     await listDatabases(client);
-    await addPlaylists(client, playlists);
-  } catch (e) {
-    console.log(e);
+    await writePlaylistsToDB(client, playlists);
+    console.log("Connected successfully to server");
   } finally {
+    // Ensures that the client will close when you finish/error
     await client.close();
   }
 }
 
-async function addPlaylists(client, playlists) {
+async function writePlaylistsToDB(client, playlists) {
   const result = await client
     .db("iTunes")
     .collection("playlists")
@@ -100,4 +100,4 @@ async function run() {
   await writePlaylistsToMongoDB(playlistsForDatabase);
 }
 
-run();
+run().catch(console.dir);
