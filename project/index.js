@@ -68,15 +68,6 @@ async function writePlaylistsToMongoDB(playlists) {
 }
 
 async function addPlaylists(client, playlists) {
-  // Drop the collection
-  await client
-    .db("iTunes")
-    .collection("playlists")
-    .drop(function (err, result) {
-      if (err) throw err;
-      if (result) console.log("Collection successfully deleted.");
-    });
-
   const result = await client
     .db("iTunes")
     .collection("playlists")
