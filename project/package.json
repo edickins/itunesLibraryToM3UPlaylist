@@ -11,5 +11,8 @@
   "devDependencies": {
     "itunes-data": "^0.1.4",
     "json-groupby": "^1.1.0"
+  },
+  "dependencies": {
+    "mongodb": "^4.1.1"
   }
 }

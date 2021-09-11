@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+var { MongoClient } = require("mongodb");
 const iTunesLibrary = require("./modules/loaders/itunesPlaylistGenerator.js");
 const {
   playlistIsBlocked,
@@ -24,6 +25,7 @@ const BLOCKED_PLAYLISTS = [
   "Garageband",
 ];
 
+/* load iTunes library and convert into a JSON object */
 async function getLibraryAsJson() {
   // path relative to location of getLibraryAsJson function deinition.
   const path = "../../data/iTunesLibrary.xml";
@@ -31,6 +33,7 @@ async function getLibraryAsJson() {
   return library;
 }
 
+/* extract and clean up all playlists from library JSON object */
 function getPlaylistsFromLibrary(library) {
   const playlists = removeBlockedPlaylists(library.playlists);
   return playlists.map((playlist) => {
@@ -41,27 +44,54 @@ function getPlaylistsFromLibrary(library) {
 function removeBlockedPlaylists(playlists) {
   return playlists.reduce((previousValue, nextValue) => {
     if (!playlistIsBlocked(nextValue, BLOCKED_PLAYLISTS)) {
-      console.log(`adding playist to docs Array : ${nextValue.Name}`);
       previousValue.push(nextValue);
     }
     return previousValue;
   }, []);
 }
 
-function writePlaylistsToMongoDB(playlists) {
-  const url = "mongodb://localhost:27017/iTunes";
-  mongodb.connect(url, function (err, db) {
-    const dbPlaylists = db.collection("playlists");
-    const playlistsAll = [];
+/* replace all existing playlists in the playlists collection */
+async function writePlaylistsToMongoDB(playlists) {
+  const url = "mongodb://localhost:27017";
 
-    dbPlaylists.find({}).toArray(function (err, results) {
-      if (err) {
-        console.log(err);
-      } else {
-        playlistsAll = results;
-        log(`all playlists : ${playlistsAll}`);
-      }
+  const client = new MongoClient(url);
+
+  try {
+    await client.connect();
+    await listDatabases(client);
+    await addPlaylists(client, playlists);
+  } catch (e) {
+    console.log(e);
+  } finally {
+    await client.close();
+  }
+}
+
+async function addPlaylists(client, playlists) {
+  // Drop the collection
+  await client
+    .db("iTunes")
+    .collection("playlists")
+    .drop(function (err, result) {
+      if (err) throw err;
+      if (result) console.log("Collection successfully deleted.");
     });
+
+  const result = await client
+    .db("iTunes")
+    .collection("playlists")
+    .insertMany(playlists);
+
+  console.log(
+    `${result.insertedCount} new playlists added with the following ids`
+  );
+  console.log(result.insertedIds);
+}
+
+async function listDatabases(client) {
+  const databasesList = await client.db().admin().listDatabases();
+  databasesList.databases.forEach((db) => {
+    console.log(` - ${db.name}`);
   });
 }
 
@@ -74,22 +104,9 @@ async function run() {
   playlists.forEach((playlistObj) => {
     const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
     playlistsForDatabase.push(createCollectionDoc(playlistObj, playlistTracks));
-    // todo: use playlistTracks
-    /* if (playlistObj.name == "Popol Vuh Essentials") {
-      console.log(`getting playlistdata for ${playlistObj.name}`);
-      const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
-      console.log(playlistTracks);
-    } */
   });
-
-  /* NOW WE HAVE THE PLAYLISTS FOR THE DATABASE TO USE, iterate through SOME PROPERTIES */
-  playlistsForDatabase.forEach((playlist) => {
-    playlist.playlistItems.forEach((track) => {
-      console.log(track.name);
-    });
-  });
-
   console.log(`there are ${playlistsForDatabase.length} playlists`);
+  await writePlaylistsToMongoDB(playlistsForDatabase);
 }
 
 run();
