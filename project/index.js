@@ -35,10 +35,7 @@ async function getLibraryAsJson() {
 
 /* extract and clean up all playlists from library JSON object */
 function getPlaylistsFromLibrary(library) {
-  const playlists = removeBlockedPlaylists(library.playlists);
-  return playlists.map((playlist) => {
-    return cleanObjKeys(playlist);
-  });
+  return removeBlockedPlaylists(library.playlists);
 }
 
 function removeBlockedPlaylists(playlists) {

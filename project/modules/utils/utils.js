@@ -14,7 +14,7 @@ const TRACK_PROPS = {
 /* playlistIsBlocked */
 exports.playlistIsBlocked = (playlist, BLOCKED_PLAYLISTS) => {
   return BLOCKED_PLAYLISTS.some((blockedPlaylist) => {
-    return blockedPlaylist.toLowerCase() == playlist.Name.toLowerCase();
+    return blockedPlaylist.toLowerCase() == playlist.name.toLowerCase();
   });
 };
 
@@ -32,6 +32,11 @@ const camelCaseKey = (key) => {
 exports.cleanObjKeys = (obj) => {
   const cleanedObj = {};
   for (let key in obj) {
+    if (Array.isArray(obj[key])) {
+      obj[key] = obj[key].map((item) => {
+        return this.cleanObjKeys(item);
+      });
+    }
     let cleanedKey = camelCaseKey(key);
     cleanedObj[cleanedKey] = obj[key];
   }
@@ -50,7 +55,7 @@ exports.getPlaylistData = (playlistObj, allTracks) => {
 
 const getTrackData = (trackObj, allTracks) => {
   try {
-    let track = allTracks[trackObj["Track ID"]];
+    let track = allTracks[trackObj["trackID"]];
     if (!track) throw "no track found in tracklist";
     return cleanUpTrackDataProps(track);
   } catch (err) {
