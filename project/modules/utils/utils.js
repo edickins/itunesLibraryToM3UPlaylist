@@ -25,7 +25,7 @@ const camelCaseKey = (key) => {
     .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
       return index == 0 ? word.toLowerCase() : word.toUpperCase();
     })
-    .replace(/\s+/g, "");
+    .replace(/\s+/g, '');
 };
 
 /* clean up keys in Object */
@@ -55,8 +55,8 @@ exports.getPlaylistData = (playlistObj, allTracks) => {
 
 const getTrackData = (trackObj, allTracks) => {
   try {
-    let track = allTracks[trackObj["trackID"]];
-    if (!track) throw "no track found in tracklist";
+    let track = allTracks[trackObj['trackID']];
+    if (!track) throw 'no track found in tracklist';
     return cleanUpTrackDataProps(track);
   } catch (err) {
     console.warn(err);
@@ -79,7 +79,7 @@ const cleanUpTrackDataProps = (track) => {
   return cleanedTrack;
 };
 
-exports.createCollectionDoc = (playlistObj, playlistItems) => {
+exports.createPlaylistCollectionDoc = (playlistObj, playlistItems) => {
   const docObj = {
     dateCreated: new Date(),
     lastUpdated: new Date(),
