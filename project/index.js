@@ -1,5 +1,5 @@
 const fs = require('fs');
-const path = require('path');
+
 var { MongoClient } = require('mongodb');
 const iTunesLibrary = require('./modules/loaders/itunesPlaylistGenerator.js');
 const {
@@ -79,7 +79,7 @@ async function run() {
   let libraryObj = await getLibraryAsJson();
   libraryObj = cleanObjKeys(libraryObj);
   const playlists = getPlaylistsFromLibrary(libraryObj);
-  const playlistsForDatabase = playlists.map((playlistObj) => {
+  const playlistsForDatabase = playlists.map(playlistObj => {
     const playlistTracks = getPlaylistData(playlistObj, libraryObj.tracks);
     return createPlaylistCollectionDoc(playlistObj, playlistTracks);
   });
